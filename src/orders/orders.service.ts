@@ -33,8 +33,7 @@ export class OrdersService {
     if (index === -1) {
       return null;
     }
-    const deletedOrder = this.orders.splice(index, 1);
-    return deletedOrder;
+    return this.orders.splice(index, 1);
   }
 
 }

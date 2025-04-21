@@ -33,7 +33,6 @@ export class ProductsService {
     if (index === -1) {
       return null;
     }
-    const deletedProduct = this.products.splice(index, 1);
-    return deletedProduct;
+    return this.products.splice(index, 1);
   }
 }
