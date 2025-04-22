@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Patch, Delete, Param } from '@nestjs/common';
+import { Body, Controller, Get, Post, Patch, Delete, Param, Inject } from '@nestjs/common';
 import { Order } from './orders.model';
 import { OrdersService } from './orders.service';
 
@@ -28,8 +28,7 @@ export class OrdersController {
   async getOrderStatus(
     @Param('id') id: string,
   ): Promise<Order['status'] | undefined> {
-    const order = await this.ordersService.getOrderByID(Number(id));
-    return order?.status;
+    return this.ordersService.getOrderStatus(Number(id));
   }
 
   @Patch(':id/status')

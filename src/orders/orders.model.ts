@@ -6,4 +6,5 @@ export class Order {
   items: string[];
   status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'CANCELED';
   orderDate: Date;
+  updatedAt: Date;
 }
