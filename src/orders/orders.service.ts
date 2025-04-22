@@ -1,4 +1,4 @@
-import { Inject, Injectable, Scope } from '@nestjs/common';
+import { Inject, Injectable} from '@nestjs/common';
 import { Order } from './orders.model';
 import { LoggerService } from '../logger/logger.service';
 
@@ -38,16 +38,6 @@ export class OrdersService {
   async getOrderStatus(id: number): Promise<Order['status'] | undefined> {
     const order = await this.getOrderByID(id);
     return order?.status;
-  }
-
-  async updateOrderStatus(
-    id: number,
-    status: Order['status'],
-  ): Promise<Order | undefined> {
-    if (!status) {
-      throw new Error('Status is required');
-    }
-    return this.updateOrder(id, { status });
   }
 
   async updateOrder(
