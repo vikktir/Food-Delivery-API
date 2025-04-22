@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Scope } from '@nestjs/common';
 import { User } from './users.model';
 
 @Injectable()
@@ -13,7 +13,10 @@ export class UsersService {
   }
 
   loginUser(userData: Omit<User, 'id'>): User | undefined {
-    return this.users.find(user => user.email === userData.email && user.password === userData.password);
+    return this.users.find(
+      (user) =>
+        user.email === userData.email && user.password === userData.password,
+    );
   }
 
   async getAllUsers(): Promise<User[]> {
@@ -21,13 +24,15 @@ export class UsersService {
   }
 
   async getUserById(id: number): Promise<User | undefined> {
-    return this.users.find(user => user.id === id);
+    return this.users.find((user) => user.id === id);
   }
 
-
-  async updateUser(id: number, userData: Partial<Omit<User,'id'>>): Promise<User | undefined> {
-    const userIndex = this.users.findIndex(user => user.id === id);
-    if(userIndex === -1) return undefined;
+  async updateUser(
+    id: number,
+    userData: Partial<Omit<User, 'id'>>,
+  ): Promise<User | undefined> {
+    const userIndex = this.users.findIndex((user) => user.id === id);
+    if (userIndex === -1) return undefined;
 
     this.users[userIndex] = { ...this.users[userIndex], ...userData };
     return this.users[userIndex];

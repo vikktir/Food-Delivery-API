@@ -21,12 +21,12 @@ export class UsersController {
   @Post('login')
   async loginUser(
     @Body() userData: Omit<User, 'id'>,
-  ): Promise<{ user?: User; message: string }> {
+  ): Promise<{ user?: User | undefined; message: string }> {
     const user = this.usersService.loginUser(userData);
     if (user) {
       return { user, message: 'successful login' };
     }
-    return { message: 'login failed' };
+    return { user, message: 'login failed' };
   }
 
   @Get()
