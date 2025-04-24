@@ -27,7 +27,7 @@ export class OrderStatusMiddleware implements NestMiddleware {
     if (request.method === 'PATCH' && request.body.status) {
       const newStatus = request.body.status;
       const validStatuses = ['PENDING', 'PROCESSING', 'COMPLETED', 'CANCELED'];
-      
+
       if (!validStatuses.includes(newStatus)) {
         return response.status(400).json({
           message: 'Невірний статус замовлення',
