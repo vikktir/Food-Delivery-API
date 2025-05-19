@@ -39,7 +39,7 @@ export class UsersController {
   async loginUser(@Body() data: { email: string; password: string }) {
     const user = await this.usersService.loginUser(data.email, data.password);
     if (!user) return { message: 'Invalid credentials' };
-    return this.authService.login(user); // ✅ Повертає accessToken
+    return this.authService.login(user);
   }
 
   @Get()

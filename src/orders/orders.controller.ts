@@ -14,6 +14,7 @@ import {
   NotFoundException,
   Query,
   UseGuards,
+  UseInterceptors
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { OrderDto } from './dto/order.dto';
@@ -23,17 +24,19 @@ import { RoundPricePipe } from '../pipes/round-price.pipe';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { LoggingTimeInterceptor } from '../interceptors/logging-time.interceptor';
 
-@UseGuards(JwtAuthGuard, RolesGuard) // глобальний Guard на весь контролер
+@UseInterceptors(LoggingTimeInterceptor)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  @Roles('USER', 'ADMIN') // доступний для всіх авторизованих
+  @Roles('USER', 'ADMIN')
   @Post('create')
   @UsePipes(new ValidationPipe({ whitelist: true }))
   async createOrder(@Body(RoundPricePipe) orderDto: OrderDto) {
-    return this.ordersService.createOrder(orderDto);
+    return await this.ordersService.createOrder(orderDto);
   }
 
   @Roles('USER', 'ADMIN')
@@ -41,7 +44,7 @@ export class OrdersController {
   async getOrders(
     @Query('deliveryType', new DefaultValuePipe('standard')) deliveryType: string,
   ) {
-    return this.ordersService.getAllOrders();
+    return await this.ordersService.getAllOrders();
   }
 
   @Roles('USER', 'ADMIN')
@@ -60,7 +63,7 @@ export class OrdersController {
     return { status };
   }
 
-  @Roles('ADMIN') // тільки адміністратор може змінювати статус
+  @Roles('ADMIN')
   @Patch(':id/status')
   async updateOrderStatus(
     @Param('id', ParseIntPipe) id: number,
@@ -69,20 +72,20 @@ export class OrdersController {
     const order = await this.ordersService.getOrderByID(id);
     if (!order) throw new NotFoundException();
     if (order.status === 'COMPLETED') throw new OrderAlreadyProcessedException();
-    return this.ordersService.updateOrder(id, { status });
+    return await this.ordersService.updateOrder(id, { status });
   }
 
-  @Roles('USER', 'ADMIN') // зміна адреси доступна авторизованим
+  @Roles('USER', 'ADMIN')
   @Patch(':id/address')
   async updateOrderAddress(
     @Param('id', ParseIntPipe) id: number,
     @Body('address') address: string,
   ) {
     if (!address || address.length < 5) throw new InvalidDeliveryAddressException();
-    return this.ordersService.updateOrder(id, { address });
+    return await this.ordersService.updateOrder(id, { address });
   }
 
-  @Roles('ADMIN') // видалення доступне тільки адміну
+  @Roles('ADMIN')
   @Delete(':id')
   async deleteOrderById(@Param('id', ParseIntPipe) id: number) {
     const deleted = await this.ordersService.deleteOrderById(id);
