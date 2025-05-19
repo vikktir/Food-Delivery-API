@@ -44,13 +44,13 @@ export class AppModule implements NestModule {
       .apply(CourierAvailabilityMiddleware)
       .exclude('/delivery/courier/create')
       .forRoutes('delivery/courier/*')
-    consumer
-      .apply(OrderStatusMiddleware)
-      .exclude('restaurants/:id/menu', 'restaurants/:id/menu/*', 'orders/create')
-      .forRoutes('orders/*')
-    consumer
-      .apply(DeliveryTrackingMiddleware)
-      .exclude('/delivery/couriers/*', '/delivery/couriers', 'delivery/create')
-      .forRoutes('delivery/*');
+    // consumer
+    //   .apply(OrderStatusMiddleware)
+    //   .exclude('restaurants/:id/menu', 'restaurants/:id/menu/*', 'orders/create')
+    //   .forRoutes('orders/*')
+    // consumer
+    //   .apply(DeliveryTrackingMiddleware)
+    //   .exclude('/delivery/couriers/*', '/delivery/couriers', 'delivery/create')
+    //   .forRoutes('delivery/*');
   }
 }

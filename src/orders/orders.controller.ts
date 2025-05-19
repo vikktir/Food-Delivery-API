@@ -1,65 +1,89 @@
-import { Body, Controller, Get, Post, Patch, Delete, Param} from '@nestjs/common';
-import { Order } from './orders.model';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  UsePipes,
+  ValidationPipe,
+  ParseIntPipe,
+  DefaultValuePipe,
+  ForbiddenException,
+  NotFoundException,
+  Query,
+} from '@nestjs/common';
 import { OrdersService } from './orders.service';
-
+import { OrderDto } from './dto/order.dto';
+import { OrderAlreadyProcessedException } from '../exceptions/order-already-processed.exception';
+import { InvalidDeliveryAddressException } from '../exceptions/invalid-delivery-address.exception';
+import { RoundPricePipe } from '../pipes/round-price.pipe';
 
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Post('create')
+  @UsePipes(new ValidationPipe({ whitelist: true }))
   async createOrder(
-    @Body() orderData: Omit<Order, 'id' | 'status' | 'orderDate'>,
-  ): Promise<Order> {
-    return this.ordersService.createOrder(orderData);
+    @Body(RoundPricePipe) orderDto: OrderDto,
+  ) {
+    return this.ordersService.createOrder(orderDto);
   }
 
   @Get()
-  getAllOrders() {
+  async getOrders(
+    @Query('deliveryType', new DefaultValuePipe('standard')) deliveryType: string
+  ) {
     return this.ordersService.getAllOrders();
   }
 
   @Get(':id')
-  async getOrderById(@Param('id') id: string): Promise<Order | undefined> {
-    return this.ordersService.getOrderByID(Number(id));
+  async getOrder(@Param('id', ParseIntPipe) id: number) {
+    const order = await this.ordersService.getOrderByID(id);
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+    return order;
   }
 
   @Get(':id/status')
-  async getOrderStatus(
-    @Param('id') id: string,
-  ): Promise<Order['status'] | undefined> {
-    return this.ordersService.getOrderStatus(Number(id));
+  async getOrderStatus(@Param('id', ParseIntPipe) id: number) {
+    const status = await this.ordersService.getOrderStatus(id);
+    if (!status) {
+      throw new NotFoundException('Order not found');
+    }
+    return { status };
   }
 
   @Patch(':id/status')
   async updateOrderStatus(
-    @Param('id') id: string,
-    @Body('status') status: Order['status'],
-  ): Promise<Order | undefined> {
-    if (!status) {
-      throw new Error('Status is required');
-    }
-    return this.ordersService.updateOrder(Number(id), { status });
+    @Param('id', ParseIntPipe) id: number,
+    @Body('status') status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'CANCELED',
+  ) {
+    const order = await this.ordersService.getOrderByID(id);
+    if (!order) throw new NotFoundException();
+    if (order.status === 'COMPLETED') throw new OrderAlreadyProcessedException();
+
+    return this.ordersService.updateOrder(id, { status });
   }
 
   @Patch(':id/address')
   async updateOrderAddress(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body('address') address: string,
-  ): Promise<Order | undefined> {
-    if (!address) {
-      throw new Error('Address is required');
+  ) {
+    if (!address || address.length < 5) {
+      throw new InvalidDeliveryAddressException();
     }
-    return await this.ordersService.updateOrder(Number(id), { address });
+    return this.ordersService.updateOrder(id, { address });
   }
 
   @Delete(':id')
-  async deleteOrderById(@Param('id') id: string):
-    Promise<{order?:Order | null, message: string}> {
-    const deletedOrder = await this.ordersService.deleteOrderById(Number(id));
-    if (!deletedOrder) {
-      return { order: null, message: "order not found" };
-    }
-    return { order: deletedOrder?.[0], message: "order successfully deleted" };
+  async deleteOrderById(@Param('id', ParseIntPipe) id: number) {
+    const deleted = await this.ordersService.deleteOrderById(id);
+    if (!deleted) throw new ForbiddenException();
+    return { order: deleted[0], message: 'Order deleted' };
   }
 }
