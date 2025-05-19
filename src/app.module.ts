@@ -16,27 +16,28 @@ import { RestaurantsController } from './restaurants/restaurants.controller';
 import { DeliveryService } from './delivery/delivery.service';
 import { RestaurantsService } from './restaurants/restaurants.service';
 import { DeliveryController } from './delivery/delivery.controller';
+import { OrdersModule } from './orders/orders.module';
 
 
 
 
 @Module({
-  imports: [DBModule],
+  imports: [DBModule, OrdersModule],
   controllers: [
     AppController,
-    OrdersController,
     UsersController,
     ProductsController,
     DeliveryController,
-    RestaurantsController],
+    RestaurantsController
+  ],
   providers: [
     AppService,
-    OrdersService,
     UsersService,
     ProductsService,
     LoggerService,
     DeliveryService,
-    RestaurantsService],
+    RestaurantsService
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

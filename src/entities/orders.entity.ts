@@ -1,7 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+
+export type OrderStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'CANCELED';
 
 @Entity()
-export class Order{
+export class Order {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -11,16 +13,18 @@ export class Order{
   @Column()
   address: string;
 
-  @Column('simple-array')
-  items: string[];
-
-  @Column()
-  orderDate: Date;
-
-  @Column()
-  status: string;
-
   @Column('decimal', { precision: 10, scale: 2 })
   totalAmount: number;
 
+  @Column('simple-array')
+  items: string[];
+
+  @Column({ type: 'enum', enum: ['PENDING', 'PROCESSING', 'COMPLETED', 'CANCELED'], default: 'PENDING' })
+  status: OrderStatus;
+
+  @CreateDateColumn()
+  orderDate: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

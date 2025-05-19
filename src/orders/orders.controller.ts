@@ -42,18 +42,14 @@ export class OrdersController {
   @Get(':id')
   async getOrder(@Param('id', ParseIntPipe) id: number) {
     const order = await this.ordersService.getOrderByID(id);
-    if (!order) {
-      throw new NotFoundException('Order not found');
-    }
+    if (!order) throw new NotFoundException('Order not found');
     return order;
   }
 
   @Get(':id/status')
   async getOrderStatus(@Param('id', ParseIntPipe) id: number) {
     const status = await this.ordersService.getOrderStatus(id);
-    if (!status) {
-      throw new NotFoundException('Order not found');
-    }
+    if (!status) throw new NotFoundException('Order not found');
     return { status };
   }
 
@@ -74,9 +70,7 @@ export class OrdersController {
     @Param('id', ParseIntPipe) id: number,
     @Body('address') address: string,
   ) {
-    if (!address || address.length < 5) {
-      throw new InvalidDeliveryAddressException();
-    }
+    if (!address || address.length < 5) throw new InvalidDeliveryAddressException();
     return this.ordersService.updateOrder(id, { address });
   }
 
@@ -84,6 +78,7 @@ export class OrdersController {
   async deleteOrderById(@Param('id', ParseIntPipe) id: number) {
     const deleted = await this.ordersService.deleteOrderById(id);
     if (!deleted) throw new ForbiddenException();
-    return { order: deleted[0], message: 'Order deleted' };
+    return { order: deleted, message: 'Order deleted' };
   }
 }
+
