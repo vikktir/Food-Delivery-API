@@ -1,49 +1,41 @@
-import { Injectable} from '@nestjs/common';
-import { User } from './users.model';
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../entities/users.entity';
 
 @Injectable()
 export class UsersService {
-  private users: User[] = [];
-  private idCounter = 1;
+  constructor(
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+  ) {}
 
-  createUser(userData: Omit<User, 'id'>): User {
-    const newUser: User = { id: this.idCounter++, ...userData };
-    this.users.push(newUser);
-    return newUser;
+  async createUser(data: Partial<User>): Promise<User> {
+    const newUser = this.userRepository.create(data);
+    return await this.userRepository.save(newUser);
   }
 
-  loginUser(userData: Omit<User, 'id'>): User | undefined {
-    return this.users.find(
-      (user) =>
-        user.email === userData.email && user.password === userData.password,
-    );
+  async loginUser(email: string, password: string): Promise<User | null> {
+    return await this.userRepository.findOneBy({ email, password });
   }
 
   async getAllUsers(): Promise<User[]> {
-    return this.users;
+    return this.userRepository.find();
   }
 
-  async getUserById(id: number): Promise<User | undefined> {
-    return this.users.find((user) => user.id === id);
+  async getUserById(id: number): Promise<User | null> {
+    return await this.userRepository.findOneBy({ id });
   }
 
-  async updateUser(
-    id: number,
-    userData: Partial<Omit<User, 'id'>>,
-  ): Promise<User | undefined> {
-    const userIndex = this.users.findIndex((user) => user.id === id);
-    if (userIndex === -1) return undefined;
-
-    this.users[userIndex] = { ...this.users[userIndex], ...userData };
-    return this.users[userIndex];
+  async updateUser(id: number, data: Partial<User>): Promise<User | null> {
+    await this.userRepository.update(id, data);
+    return this.getUserById(id);
   }
 
   async deleteUserById(id: number): Promise<User | null> {
-    const index = this.users.findIndex((user) => user.id === id);
-    if (index === -1) {
-      return null;
-    }
-    const [deletedUser] = this.users.splice(index, 1);
-    return deletedUser;
+    const user = await this.getUserById(id);
+    if (!user) return null;
+    await this.userRepository.remove(user);
+    return user;
   }
 }

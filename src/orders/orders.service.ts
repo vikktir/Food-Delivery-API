@@ -20,6 +20,7 @@ export class OrdersService {
   }
 
   async getAllOrders(): Promise<Order[]> {
+
     return this.ordersRepository.find();
   }
 

@@ -13,32 +13,38 @@ import {
   ForbiddenException,
   NotFoundException,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { OrderDto } from './dto/order.dto';
 import { OrderAlreadyProcessedException } from '../exceptions/order-already-processed.exception';
 import { InvalidDeliveryAddressException } from '../exceptions/invalid-delivery-address.exception';
 import { RoundPricePipe } from '../pipes/round-price.pipe';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
+@UseGuards(JwtAuthGuard, RolesGuard) // глобальний Guard на весь контролер
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
+  @Roles('USER', 'ADMIN') // доступний для всіх авторизованих
   @Post('create')
   @UsePipes(new ValidationPipe({ whitelist: true }))
-  async createOrder(
-    @Body(RoundPricePipe) orderDto: OrderDto,
-  ) {
+  async createOrder(@Body(RoundPricePipe) orderDto: OrderDto) {
     return this.ordersService.createOrder(orderDto);
   }
 
+  @Roles('USER', 'ADMIN')
   @Get()
   async getOrders(
-    @Query('deliveryType', new DefaultValuePipe('standard')) deliveryType: string
+    @Query('deliveryType', new DefaultValuePipe('standard')) deliveryType: string,
   ) {
     return this.ordersService.getAllOrders();
   }
 
+  @Roles('USER', 'ADMIN')
   @Get(':id')
   async getOrder(@Param('id', ParseIntPipe) id: number) {
     const order = await this.ordersService.getOrderByID(id);
@@ -46,6 +52,7 @@ export class OrdersController {
     return order;
   }
 
+  @Roles('USER', 'ADMIN')
   @Get(':id/status')
   async getOrderStatus(@Param('id', ParseIntPipe) id: number) {
     const status = await this.ordersService.getOrderStatus(id);
@@ -53,6 +60,7 @@ export class OrdersController {
     return { status };
   }
 
+  @Roles('ADMIN') // тільки адміністратор може змінювати статус
   @Patch(':id/status')
   async updateOrderStatus(
     @Param('id', ParseIntPipe) id: number,
@@ -61,10 +69,10 @@ export class OrdersController {
     const order = await this.ordersService.getOrderByID(id);
     if (!order) throw new NotFoundException();
     if (order.status === 'COMPLETED') throw new OrderAlreadyProcessedException();
-
     return this.ordersService.updateOrder(id, { status });
   }
 
+  @Roles('USER', 'ADMIN') // зміна адреси доступна авторизованим
   @Patch(':id/address')
   async updateOrderAddress(
     @Param('id', ParseIntPipe) id: number,
@@ -74,6 +82,7 @@ export class OrdersController {
     return this.ordersService.updateOrder(id, { address });
   }
 
+  @Roles('ADMIN') // видалення доступне тільки адміну
   @Delete(':id')
   async deleteOrderById(@Param('id', ParseIntPipe) id: number) {
     const deleted = await this.ordersService.deleteOrderById(id);
@@ -81,4 +90,3 @@ export class OrdersController {
     return { order: deleted, message: 'Order deleted' };
   }
 }
-

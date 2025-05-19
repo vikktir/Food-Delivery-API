@@ -1,32 +1,45 @@
-import { Body, Param, Controller, Get, Post, Patch, Delete } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Get,
+  Param,
+  Patch,
+  Delete,
+  ParseIntPipe,
+  UsePipes,
+  ValidationPipe,
+  NotFoundException,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
-import { User } from './users.model';
+import { User } from '../entities/users.entity';
+import {AuthService} from "../auth/auth.service";
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService,
+              private readonly authService: AuthService,
+              ) {}
 
   @Post('register')
+  @UsePipes(new ValidationPipe({ whitelist: true }))
   async createUser(
     @Body() userData: Omit<User, 'id'>,
   ): Promise<{ user?: User; message: string }> {
     try {
-      const user = this.usersService.createUser(userData);
-      return { user, message: 'successful registration' };
+      const user = await this.usersService.createUser(userData);
+      return { user, message: 'Successful registration' };
     } catch {
-      return { message: 'unsuccessful registration' };
+      return { message: 'Registration failed' };
     }
   }
 
   @Post('login')
-  async loginUser(
-    @Body() userData: Omit<User, 'id'>,
-  ): Promise<{ user?: User | undefined; message: string }> {
-    const user = this.usersService.loginUser(userData);
-    if (user) {
-      return { user, message: 'successful login' };
-    }
-    return { user, message: 'login failed' };
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  async loginUser(@Body() data: { email: string; password: string }) {
+    const user = await this.usersService.loginUser(data.email, data.password);
+    if (!user) return { message: 'Invalid credentials' };
+    return this.authService.login(user); // ✅ Повертає accessToken
   }
 
   @Get()
@@ -35,25 +48,26 @@ export class UsersController {
   }
 
   @Get(':id')
-  async getUserById(@Param('id') id: string): Promise<User | undefined> {
-    return this.usersService.getUserById(Number(id));
+  async getUserById(@Param('id', ParseIntPipe) id: number): Promise<User> {
+    const user = await this.usersService.getUserById(id);
+    if (!user) throw new NotFoundException('User not found');
+    return user;
   }
 
   @Patch(':id')
   async updateUser(
-    @Param('id') id: string,
-    @Body() userData: Partial<Omit<User, 'id'>>,
-  ): Promise<User | undefined> {
-    return this.usersService.updateUser(Number(id), userData);
+    @Param('id', ParseIntPipe) id: number,
+    @Body() data: Partial<Omit<User, 'id'>>,
+  ): Promise<User> {
+    const user = await this.usersService.updateUser(id, data);
+    if (!user) throw new NotFoundException('User not found');
+    return user;
   }
 
   @Delete(':id')
-  async deleteUserById(@Param('id') id: string): Promise<{ user?: User | null; message: string }> {
-    const deletedUser = await this.usersService.deleteUserById(Number(id));
-    if (!deletedUser) {
-      return { user: null, message: "user not found" };
-    }
-    return { user: deletedUser, message: "user successfully deleted" };
-
+  async deleteUserById(@Param('id', ParseIntPipe) id: number): Promise<{ message: string }> {
+    const deletedUser = await this.usersService.deleteUserById(id);
+    if (!deletedUser) throw new NotFoundException('User not found');
+    return { message: 'User deleted successfully' };
   }
 }
